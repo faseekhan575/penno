@@ -6,6 +6,10 @@ import { useNavigate } from "react-router-dom";
 export default function Validate() {
   const navigate = useNavigate();
 
+  const handelsubmit=()=>{
+    navigate('/panel')
+  }
+
   const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -139,6 +143,7 @@ export default function Validate() {
           <button
             type="button"
             disabled={!isComplete}
+            onClick={handelsubmit}
             className={`
               w-full flex items-center justify-center gap-2
               py-3.5 px-6 rounded-xl font-medium text-base shadow-md

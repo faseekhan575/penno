@@ -1,6 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import PendingApprovals from './pendingapprovel.tsx'
+
 import './index.css'
 
 import App from './App.jsx'
@@ -15,7 +17,8 @@ createRoot(document.getElementById('root')).render(
         <Route path="/" element={<App />} />
         <Route path="/validate" element={<Validate />} />
         <Route path="/panel" element={<Panel />} />
-    
+        <Route path="/pending" element={<PendingApprovals />} />
+         
         <Route path="*" element={<App />} />
       </Routes>
     </BrowserRouter>

@@ -1,8 +1,16 @@
 // src/App.tsx
-import { useState } from 'react'
+import { use, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 function App() {
   const [email, setEmail] = useState('admin@penno.io')
+  const navigate=useNavigate()
+
+  const handleSubmit=()=>{
+    // Here you would typically send the email to your backend to generate and send the OTP
+    // For this example, we'll just navigate to the validate page
+    navigate('/validate')
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -44,6 +52,7 @@ function App() {
 
             <button
               type="button"
+              onClick={handleSubmit}
               className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium py-3.5 rounded-lg transition-colors shadow-md flex items-center justify-center gap-2 group"
             >
               Send OTP →
