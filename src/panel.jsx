@@ -144,7 +144,7 @@ export default function Panel() {
   <AlertTriangle className="w-5 h-5 mr-3 text-orange-500" />
   Pending approval
 </NavLink>
-              <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+              <a href="/active-clubs" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
                 <ShieldCheck className="w-5 h-5 mr-3 text-green-500" />
                 Active clubs
               </a>
