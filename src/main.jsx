@@ -2,6 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import PendingApprovals from './pendingapprovel.tsx'
+import SuspendingClubs from './suspendedclubs.tsx'
+import LogoutHandler from './logouthandler.jsx'
 
 import './index.css'
 
@@ -20,6 +22,8 @@ createRoot(document.getElementById('root')).render(
         <Route path="/panel" element={<Panel />} />
         <Route path="/pending" element={<PendingApprovals />} />
           <Route path="/active-clubs" element={<ActiveClubs />} />
+          <Route path="/suspending-clubs" element={<SuspendingClubs />} />
+          <Route path="/logout" element={<LogoutHandler />} />
         <Route path="*" element={<App />} />
       </Routes>
     </BrowserRouter>

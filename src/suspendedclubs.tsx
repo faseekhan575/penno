@@ -1,4 +1,4 @@
-// src/pages/ActiveClubs.jsx
+// src/pages/SuspendingClubs.jsx
 import { NavLink } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -17,6 +17,7 @@ import {
   X,
   CheckCircle2,
   XCircle,
+  ArrowLeft,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -64,10 +65,10 @@ function Toast({ type, title, message, onClose }) {
   );
 }
 
-export default function ActiveClubs() {
-  const [activeClubs, setActiveClubs] = useState(() => {
+export default function SuspendingClubs() {
+  const [suspendedClubs, setSuspendedClubs] = useState(() => {
     try {
-      const saved = localStorage.getItem('penno_active');
+      const saved = localStorage.getItem('penno_suspended');
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -77,26 +78,25 @@ export default function ActiveClubs() {
   const [search, setSearch] = useState('');
   const [toast, setToast] = useState(null);
 
-  // Filter states
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [sorting, setSorting] = useState('All');
   const [timeFilter, setTimeFilter] = useState('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
 
-  // Suspend / Reactivate modal states
-  const [showSuspend, setShowSuspend] = useState(false);
-  const [showReactivate, setShowReactivate] = useState(false);
+  const [showReactivateModal, setShowReactivateModal] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
-  const [reason, setReason] = useState('Fraud / fake club');
-  const [note, setNote] = useState('Why are we reactivating?');
+  const [note, setNote] = useState('');
   const [notification, setNotification] = useState(true);
+
+  // View mode state
+  const [selectedClubForReview, setSelectedClubForReview] = useState(null);
 
   // Logout Modal State
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const navigate = useNavigate();
 
-  // Logout handlers (same as Panel and PendingApprovals)
+  // Logout handlers (same as all other pages)
   const logout = () => {
     navigate('/login');
   };
@@ -116,15 +116,15 @@ export default function ActiveClubs() {
 
   // Keep localStorage in sync
   useEffect(() => {
-    localStorage.setItem('penno_active', JSON.stringify(activeClubs));
-  }, [activeClubs]);
+    localStorage.setItem('penno_suspended', JSON.stringify(suspendedClubs));
+  }, [suspendedClubs]);
 
-  // Re-read from localStorage on focus
+  // Re-read from localStorage when page gains focus
   useEffect(() => {
     const onFocus = () => {
       try {
-        const saved = localStorage.getItem('penno_active');
-        if (saved) setActiveClubs(JSON.parse(saved));
+        const saved = localStorage.getItem('penno_suspended');
+        if (saved) setSuspendedClubs(JSON.parse(saved));
       } catch {
         /* ignore */
       }
@@ -133,8 +133,7 @@ export default function ActiveClubs() {
     return () => window.removeEventListener('focus', onFocus);
   }, []);
 
-  // ==================== FILTER LOGIC ====================
-  let filteredClubs = activeClubs.filter((club) => {
+  let filteredClubs = suspendedClubs.filter((club) => {
     const matchesSearch =
       club.name.toLowerCase().includes(search.toLowerCase()) ||
       club.email.toLowerCase().includes(search.toLowerCase()) ||
@@ -159,85 +158,373 @@ export default function ActiveClubs() {
   if (sorting === 'Ascending') {
     filteredClubs = [...filteredClubs].sort((a, b) => a.name.localeCompare(b.name));
   } else if (sorting === 'Descending') {
-    filteredClubs = [...filteredClubs].sort((a, b) => b.name.localeCompare(a.name));
+    filteredClubs = [...filteredClubs].sort((a, b) => b.name.localeCompare(b.name));
   }
 
-  const openSuspendModal = (id) => {
-    setSelectedId(id);
-    setReason('Fraud / fake club');
-    setNote('Why are we reactivating?');
-    setNotification(true);
-    setShowSuspend(true);
+  const openReview = (club) => {
+    setSelectedClubForReview(club);
+  };
+
+  const closeReview = () => {
+    setSelectedClubForReview(null);
   };
 
   const openReactivateModal = (id) => {
     setSelectedId(id);
-    setNote('Why are we reactivating?');
+    setNote('');
     setNotification(true);
-    setShowReactivate(true);
+    setShowReactivateModal(true);
   };
 
   const closeModals = () => {
-    setShowSuspend(false);
-    setShowReactivate(false);
+    setShowReactivateModal(false);
     setSelectedId(null);
   };
 
-  const handleSuspendConfirm = () => {
+  const handleReactivateConfirm = () => {
     if (!selectedId) return;
 
-    const club = activeClubs.find((c) => c.id === selectedId);
+    const club = suspendedClubs.find((c) => c.id === selectedId);
     if (!club) return;
 
-    setActiveClubs((prev) => prev.filter((c) => c.id !== selectedId));
+    setSuspendedClubs((prev) => prev.filter((c) => c.id !== selectedId));
 
     try {
-      const saved = localStorage.getItem('penno_suspended');
-      const suspended = saved ? JSON.parse(saved) : [];
-      if (!suspended.find((c) => c.id === club.id)) {
-        suspended.push({
-          ...club,
-          status: 'suspended',
-          suspendReason: reason,
-          suspendedAt: new Date().toLocaleString(),
-        });
+      const saved = localStorage.getItem('penno_active');
+      const active = saved ? JSON.parse(saved) : [];
+      if (!active.find((c) => c.id === club.id)) {
+        active.push({ ...club, status: 'active' });
       } else {
-        const idx = suspended.findIndex((c) => c.id === club.id);
-        suspended[idx] = {
-          ...club,
-          status: 'suspended',
-          suspendReason: reason,
-          suspendedAt: new Date().toLocaleString(),
-        };
+        const idx = active.findIndex((c) => c.id === club.id);
+        active[idx] = { ...club, status: 'active' };
       }
-      localStorage.setItem('penno_suspended', JSON.stringify(suspended));
+      localStorage.setItem('penno_active', JSON.stringify(active));
     } catch {
       /* ignore */
     }
 
     setToast({
-      type: 'error',
-      title: 'Club suspended',
-      message: 'The club is no longer visible on Penno.',
-    });
-    closeModals();
-  };
-
-  const handleReactivateConfirm = () => {
-    if (!selectedId) return;
-    setActiveClubs((prev) =>
-      prev.map((club) =>
-        club.id === selectedId ? { ...club, status: 'active' } : club
-      )
-    );
-    setToast({
       type: 'success',
       title: 'Club re-activated',
-      message: 'The club is now visible again.',
+      message: 'The club is now visible again on Penno.',
     });
     closeModals();
+    closeReview();
   };
 
+  const selectedClub = suspendedClubs.find((c) => c.id === selectedId);
+
+  // ==================== REVIEW MODE ====================
+  if (selectedClubForReview) {
+    const club = selectedClubForReview;
+
+    return (
+      <div className="flex h-screen bg-gray-50 overflow-hidden relative">
+        {/* SIDEBAR */}
+        <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
+          <div className="p-6 flex items-center gap-3 border-b border-gray-200">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm">
+              <span className="text-white text-2xl font-bold">P</span>
+            </div>
+            <span className="text-xl font-semibold text-gray-900">Penno</span>
+          </div>
+          <div className="flex-1 overflow-y-auto py-5 px-3">
+            <div className="mb-8">
+              <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                OVERVIEW
+              </p>
+              <nav className="space-y-1">
+                <NavLink
+                  to="/panel"
+                  className="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-700 hover:bg-gray-100"
+                >
+                  <LayoutDashboard className="w-5 h-5 mr-3" />
+                  Dashboard
+                </NavLink>
+              </nav>
+            </div>
+
+            <div className="mb-8">
+              <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                CLUB MANAGEMENT
+              </p>
+              <nav className="space-y-1">
+                <NavLink
+                  to="/pending"
+                  className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <AlertTriangle className="w-5 h-5 mr-3" />
+                  Pending approval
+                </NavLink>
+                <NavLink
+                  to="/active-clubs"
+                  className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <ShieldCheck className="w-5 h-5 mr-3 text-green-500" />
+                  Active clubs
+                </NavLink>
+                <div className="flex items-center px-3 py-2 text-sm rounded-lg bg-blue-500 text-white font-medium">
+                  <Shield className="w-5 h-5 mr-3 text-white" />
+                  Suspending clubs
+                </div>
+              </nav>
+            </div>
+
+            <div className="mb-8">
+              <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                PENS & MODERATION
+              </p>
+              <nav className="space-y-1">
+                <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                  <MessageSquare className="w-5 h-5 mr-3" />
+                  All Pens
+                </a>
+                <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                  <AlertTriangle className="w-5 h-5 mr-3 text-red-500" />
+                  Reported pens
+                </a>
+              </nav>
+            </div>
+
+            <div className="mb-8">
+              <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                USERS
+              </p>
+              <nav className="space-y-1">
+                <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                  <Users className="w-5 h-5 mr-3" />
+                  Club owner
+                </a>
+                <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                  <UserCog className="w-5 h-5 mr-3" />
+                  Verified poster
+                </a>
+              </nav>
+            </div>
+
+            <div className="mb-4">
+              <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                PLATFORM SETTINGS
+              </p>
+              <nav className="space-y-1">
+                <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                  <Settings className="w-5 h-5 mr-3" />
+                  Categories
+                </a>
+                <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                  <Shield className="w-5 h-5 mr-3" />
+                  Safety rules
+                </a>
+              </nav>
+            </div>
+          </div>
+
+          {/* Logout Button in Review Mode */}
+          <div className="p-4 border-t border-gray-200">
+            <button
+              onClick={() => setShowLogoutModal(true)}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-sm font-medium transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+          </div>
+        </aside>
+
+        {/* REVIEW PAGE CONTENT */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4">
+            <button
+              onClick={closeReview}
+              className="text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft size={24} />
+            </button>
+            <h1 className="text-xl font-semibold text-gray-900">Suspended club review</h1>
+          </header>
+
+          <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
+            <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-gray-200 bg-gray-50">
+                <div className="flex items-center gap-4">
+                  <div
+                    className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl font-semibold shadow-sm ${getBgColor(
+                      club.logo
+                    )}`}
+                  >
+                    {getInitials(club.name)}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Club Name</p>
+                    <p className="text-xl font-semibold text-gray-900">{club.name}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-y-6 gap-x-8 mt-8 text-sm">
+                  <div>
+                    <p className="text-gray-500">Official Email</p>
+                    <p className="font-medium mt-1">{club.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Category</p>
+                    <p className="font-medium mt-1">{club.category}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Created by</p>
+                    <p className="font-medium mt-1">John Murphy</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Club Location</p>
+                    <p className="font-medium mt-1">Dublin (if provided)</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Current Status</p>
+                    <span className="inline-flex mt-1 px-4 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">
+                      Suspended
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-6 py-5 border-b border-gray-200">
+                <h3 className="text-base font-semibold text-gray-900 mb-4">Suspension Info</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <p className="text-xs text-gray-500">Suspended on</p>
+                    <p className="text-sm font-medium mt-1">
+                      {club.suspendedAt || club.time || '2026-02-02, 10:21 AM'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Suspended by</p>
+                    <p className="text-sm font-medium mt-1">James O&apos;Neil (Super Admin)</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Note</p>
+                    <p className="text-sm font-medium mt-1 text-gray-700">
+                      Multiple reports on urgent training posts + repeated edits
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-6 py-5">
+                <h3 className="text-base font-semibold text-gray-900 mb-4">Recent Reports</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-3 text-xs font-medium text-gray-500">Reported Pen Title</th>
+                        <th className="text-left py-3 text-xs font-medium text-gray-500">Type</th>
+                        <th className="text-left py-3 text-xs font-medium text-gray-500">Last reported</th>
+                        <th className="text-left py-3 text-xs font-medium text-gray-500">Reports count</th>
+                        <th className="text-right py-3 text-xs font-medium text-gray-500">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      <tr>
+                        <td className="py-4 text-sm">Training Schedule Update</td>
+                        <td className="py-4 text-sm">Update</td>
+                        <td className="py-4 text-sm text-gray-500">2h ago</td>
+                        <td className="py-4 text-sm">10</td>
+                        <td className="py-4 text-right">
+                          <button className="px-4 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded">View</button>
+                          <button className="ml-2 px-4 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded">Remove</button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-4 text-sm">Senior Team Training</td>
+                        <td className="py-4 text-sm">Event</td>
+                        <td className="py-4 text-sm text-gray-500">10 Sep 2026, 5:00 PM</td>
+                        <td className="py-4 text-sm">3</td>
+                        <td className="py-4 text-right">
+                          <button className="px-4 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded">View</button>
+                          <button className="ml-2 px-4 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded">Remove</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="px-6 py-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+                <button
+                  onClick={closeReview}
+                  className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => openReactivateModal(club.id)}
+                  className="px-8 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium flex items-center gap-2"
+                >
+                  Re-activate
+                </button>
+              </div>
+            </div>
+          </main>
+        </div>
+
+        {/* REACTIVATE MODAL in Review Mode */}
+        {showReactivateModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
+            <div className="bg-white rounded-xl shadow-2xl w-[400px]">
+              <div className="p-5">
+                <div className="mt-1">
+                  <label className="block text-sm font-medium text-gray-700">Optional note</label>
+                  <textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    className="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm h-20 resize-y"
+                    placeholder="Why are we reactivating?"
+                  />
+                </div>
+
+                <div className="mt-5">
+                  <div className="text-sm font-medium text-gray-700 mb-2">Notification</div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-zinc-200 rounded-full flex items-center justify-center">👤</div>
+                      <div>
+                        <p className="text-sm font-medium">{club.name}</p>
+                        <p className="text-xs text-gray-500">Club owner</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Send owner a reactivation notice</span>
+                      <button
+                        onClick={() => setNotification(!notification)}
+                        className={`relative h-6 w-11 flex items-center rounded-full transition-all ${notification ? 'bg-blue-600' : 'bg-gray-300'}`}
+                      >
+                        <div className={`h-5 w-5 bg-white rounded-full shadow transition-all ${notification ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex gap-3">
+                  <button
+                    onClick={closeModals}
+                    className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleReactivateConfirm}
+                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium"
+                  >
+                    Re-activate club
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ==================== ORIGINAL LIST VIEW ====================
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden relative">
       {/* SIDEBAR */}
@@ -276,17 +563,17 @@ export default function ActiveClubs() {
                 <AlertTriangle className="w-5 h-5 mr-3" />
                 Pending approval
               </NavLink>
-              <div className="flex items-center px-3 py-2 text-sm rounded-lg bg-blue-500 text-white font-medium">
-                <ShieldCheck className="w-5 h-5 mr-3 text-white" />
-                Active clubs
-              </div>
               <NavLink
-                to="/suspending-clubs"
+                to="/active-clubs"
                 className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
               >
-                <Shield className="w-5 h-5 mr-3 text-red-500" />
-                Suspending clubs
+                <ShieldCheck className="w-5 h-5 mr-3 text-green-500" />
+                Active clubs
               </NavLink>
+              <div className="flex items-center px-3 py-2 text-sm rounded-lg bg-blue-500 text-white font-medium">
+                <Shield className="w-5 h-5 mr-3 text-white" />
+                Suspending clubs
+              </div>
             </nav>
           </div>
 
@@ -339,7 +626,7 @@ export default function ActiveClubs() {
           </div>
         </div>
 
-        {/* Logout Button - Now opens beautiful modal */}
+        {/* Logout Button */}
         <div className="p-4 border-t border-gray-200">
           <button
             onClick={() => setShowLogoutModal(true)}
@@ -354,7 +641,7 @@ export default function ActiveClubs() {
       {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white border-b border-gray-200 px-6 py-3.5 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-gray-900">Active Clubs</h1>
+          <h1 className="text-xl font-semibold text-gray-900">Suspended Clubs</h1>
           <div className="flex items-center gap-5">
             <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
               <Bell className="w-6 h-6" />
@@ -378,36 +665,40 @@ export default function ActiveClubs() {
         </header>
 
         <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
-          {/* Stats row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-gray-600">Active Clubs</p>
+                  <p className="text-sm text-gray-600">Suspended clubs</p>
+                  <p className="text-3xl font-bold mt-1">{suspendedClubs.length}</p>
+                  <p className="text-xs text-gray-500 mt-1">Active suspensions</p>
+                </div>
+                <AlertTriangle className="w-12 h-12 text-blue-500 opacity-20" />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-600">New suspensions (7 days)</p>
                   <p className="text-3xl font-bold mt-1">
-                    {activeClubs.filter((c) => c.status === 'active').length}
+                    {suspendedClubs.filter((c) => {
+                      if (!c.time) return false;
+                      if (c.time.includes('h ago')) return true;
+                      if (c.time.includes('d ago')) return parseInt(c.time) <= 7;
+                      return false;
+                    }).length}
                   </p>
-                  <p className="text-xs text-green-600 mt-1">+3 pending approval</p>
+                  <p className="text-xs text-gray-500 mt-1">Last 7 days</p>
                 </div>
-                <ShieldCheck className="w-12 h-12 text-blue-500 opacity-20" />
+                <AlertTriangle className="w-12 h-12 text-blue-500 opacity-20" />
               </div>
             </div>
 
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-gray-600">Pens Today</p>
-                  <p className="text-3xl font-bold mt-1">87</p>
-                  <p className="text-xs text-gray-500 mt-1">Neutral, informational only</p>
-                </div>
-                <MessageSquare className="w-12 h-12 text-blue-500 opacity-20" />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-sm text-gray-600">Today Reports</p>
+                  <p className="text-sm text-gray-600">Appeals pending</p>
                   <p className="text-3xl font-bold mt-1">3</p>
                   <p className="text-xs text-red-600 mt-1">▲ Needs review</p>
                 </div>
@@ -419,9 +710,9 @@ export default function ActiveClubs() {
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">Active Clubs</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Suspended Clubs</h2>
                 <p className="text-sm text-gray-600">
-                  Clubs currently live and visible on Penno.
+                  Clubs that are currently suspended and not visible on Penno.
                 </p>
               </div>
             </div>
@@ -460,8 +751,9 @@ export default function ActiveClubs() {
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Club</th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted on</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Suspended on</th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reports</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -483,38 +775,27 @@ export default function ActiveClubs() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{club.category}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{club.email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{club.submittedAt || club.time}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{club.suspendedAt || club.time}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{club.reports || 0}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{club.suspendReason || '—'}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            club.status === 'active'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {club.status === 'active' ? 'Active' : 'Suspended'}
+                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                          suspended
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right space-x-2">
-                        <button className="px-3.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors">
+                        <button
+                          onClick={() => openReview(club)}
+                          className="px-3.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors"
+                        >
                           View
                         </button>
-                        {club.status === 'active' ? (
-                          <button
-                            onClick={() => openSuspendModal(club.id)}
-                            className="px-3.5 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded transition-colors"
-                          >
-                            Suspend
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => openReactivateModal(club.id)}
-                            className="px-3.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded transition-colors"
-                          >
-                            Re-activate
-                          </button>
-                        )}
+                        <button
+                          onClick={() => openReactivateModal(club.id)}
+                          className="px-3.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded transition-colors"
+                        >
+                          Re-activate
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -522,7 +803,7 @@ export default function ActiveClubs() {
               </table>
 
               {filteredClubs.length === 0 && (
-                <div className="py-16 text-center text-gray-500">No active clubs found</div>
+                <div className="py-16 text-center text-gray-500">No suspended clubs found</div>
               )}
             </div>
           </div>
@@ -626,75 +907,8 @@ export default function ActiveClubs() {
         </div>
       )}
 
-      {/* SUSPEND MODAL */}
-      {showSuspend && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-xl shadow-2xl w-[400px]">
-            <div className="p-5">
-              <select
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full border border-gray-300 bg-blue-50 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option>Fraud / fake club</option>
-                <option>Spam / abuse</option>
-                <option>Inappropriate content</option>
-                <option>Other violation</option>
-              </select>
-
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700">Optional note</label>
-                <textarea
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  className="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm h-20 resize-y"
-                  placeholder="Why are we suspending?"
-                />
-              </div>
-
-              <div className="mt-5">
-                <div className="text-sm font-medium text-gray-700 mb-2">Notification</div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-zinc-200 rounded-full flex items-center justify-center">🛡️</div>
-                    <div>
-                      <p className="text-sm font-medium">Club owner</p>
-                      <p className="text-xs text-gray-500">Club owner</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">Send owner a suspension notice</span>
-                    <button
-                      onClick={() => setNotification(!notification)}
-                      className={`relative h-6 w-11 flex items-center rounded-full transition-all ${notification ? 'bg-blue-600' : 'bg-gray-300'}`}
-                    >
-                      <div className={`h-5 w-5 bg-white rounded-full shadow transition-all ${notification ? 'translate-x-6' : 'translate-x-0.5'}`} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex gap-3">
-                <button
-                  onClick={closeModals}
-                  className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSuspendConfirm}
-                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
-                >
-                  Suspend club
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* REACTIVATE MODAL */}
-      {showReactivate && (
+      {showReactivateModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-xl shadow-2xl w-[400px]">
             <div className="p-5">
@@ -714,7 +928,7 @@ export default function ActiveClubs() {
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-zinc-200 rounded-full flex items-center justify-center">👤</div>
                     <div>
-                      <p className="text-sm font-medium">Club owner</p>
+                      <p className="text-sm font-medium">{selectedClub?.name || 'Club'}</p>
                       <p className="text-xs text-gray-500">Club owner</p>
                     </div>
                   </div>
@@ -749,7 +963,6 @@ export default function ActiveClubs() {
         </div>
       )}
 
-      {/* Toast */}
       {toast && <Toast type={toast.type} title={toast.title} message={toast.message} onClose={() => setToast(null)} />}
 
       {/* ──────────────── BEAUTIFUL LOGOUT MODAL (Same as Panel.jsx) ──────────────── */}

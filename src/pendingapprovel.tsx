@@ -1,5 +1,6 @@
 // src/pages/PendingApprovals.jsx
 import { NavLink } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -200,7 +201,6 @@ function addToActive(club) {
   try {
     const saved = localStorage.getItem('penno_active');
     const active = saved ? JSON.parse(saved) : [];
-    // avoid duplicates
     if (!active.find((c) => c.id === club.id)) {
       active.push({ ...club, status: 'active', reports: 0 });
       localStorage.setItem('penno_active', JSON.stringify(active));
@@ -224,6 +224,29 @@ export default function PendingApprovals() {
   const [sorting, setSorting] = useState('All');
   const [timeFilter, setTimeFilter] = useState('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
+
+  // Logout Modal State
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const navigate = useNavigate();
+
+  // Logout handlers (same as Panel.jsx)
+  const logout = () => {
+    navigate('/login');
+  };
+
+  const handleLogoutConfirm = () => {
+    // ────────────────────────────────────────────────
+    //       REAL LOGOUT LOGIC SHOULD GO HERE
+    // ────────────────────────────────────────────────
+    // localStorage.removeItem('token');
+    // localStorage.removeItem('user');
+    // await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+
+    setShowLogoutModal(false);
+    alert('Logged out successfully! (demo)');
+    navigate('/login');
+  };
 
   // ==================== REAL WORKING FILTER ====================
   let filteredClubs = clubs.filter((club) => {
@@ -262,7 +285,6 @@ export default function PendingApprovals() {
     setSelectedClub(club);
   };
 
-  // ── APPROVE: move club to active, remove from pending ─────────────────────
   const handleApproveFromModal = () => {
     if (!selectedClub) return;
 
@@ -286,7 +308,6 @@ export default function PendingApprovals() {
     setShowRejectModal(true);
   };
 
-  // ── REJECT: just remove from pending ─────────────────────────────────────
   const confirmReject = () => {
     if (!selectedClub) return;
 
@@ -304,7 +325,7 @@ export default function PendingApprovals() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-gray-50 overflow-hidden relative">
       {/* SIDEBAR */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-6 flex items-center gap-3 border-b border-gray-200">
@@ -313,6 +334,7 @@ export default function PendingApprovals() {
           </div>
           <span className="text-xl font-semibold text-gray-900">Penno</span>
         </div>
+
         <div className="flex-1 overflow-y-auto py-5 px-3">
           <div className="mb-8">
             <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
@@ -328,6 +350,7 @@ export default function PendingApprovals() {
               </NavLink>
             </nav>
           </div>
+
           <div className="mb-8">
             <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
               CLUB MANAGEMENT
@@ -345,7 +368,7 @@ export default function PendingApprovals() {
                 Active clubs
               </NavLink>
               <NavLink
-                to="#"
+                to="/suspending-clubs"
                 className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <Shield className="w-5 h-5 mr-3 text-red-500" />
@@ -353,6 +376,7 @@ export default function PendingApprovals() {
               </NavLink>
             </nav>
           </div>
+
           <div className="mb-8">
             <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
               PENS & MODERATION
@@ -368,6 +392,7 @@ export default function PendingApprovals() {
               </a>
             </nav>
           </div>
+
           <div className="mb-8">
             <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
               USERS
@@ -383,6 +408,7 @@ export default function PendingApprovals() {
               </a>
             </nav>
           </div>
+
           <div className="mb-4">
             <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
               PLATFORM SETTINGS
@@ -399,9 +425,11 @@ export default function PendingApprovals() {
             </nav>
           </div>
         </div>
+
+        {/* Logout Button */}
         <div className="p-4 border-t border-gray-200">
           <button
-            onClick={() => alert('Logout – implement real logic here')}
+            onClick={() => setShowLogoutModal(true)}
             className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-sm font-medium transition-colors"
           >
             <LogOut className="w-4 h-4" />
@@ -615,7 +643,7 @@ export default function PendingApprovals() {
         </div>
       )}
 
-      {/* Filter Modal - top-right positioned */}
+      {/* Filter Modal */}
       {showFilterModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-end items-start pointer-events-none">
           <div
@@ -752,6 +780,63 @@ export default function PendingApprovals() {
               >
                 Reject club
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ──────────────── BEAUTIFUL LOGOUT MODAL (Same as Panel.jsx) ──────────────── */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-8 text-center relative">
+              {/* Animated warning icon */}
+              <div className="relative mx-auto mb-6 w-24 h-24">
+                <div className="absolute inset-0 rounded-full bg-red-500/10 animate-ping-slow"></div>
+                <div className="absolute inset-2 rounded-full bg-red-500/20 animate-ping-slower"></div>
+                <div className="w-full h-full rounded-full bg-red-500 flex items-center justify-center shadow-lg relative z-10">
+                  <span className="text-white text-5xl font-bold">!</span>
+                </div>
+
+                {/* Floating particles */}
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-400 rounded-full animate-float"></span>
+                <span className="absolute bottom-2 right-4 w-2 h-2 bg-red-300 rounded-full animate-float delay-150"></span>
+                <span className="absolute top-6 right-0 w-1.5 h-1.5 bg-red-400 rounded-full animate-float delay-300"></span>
+                <span className="absolute bottom-8 left-2 w-1.5 h-1.5 bg-red-300 rounded-full animate-float delay-450"></span>
+              </div>
+
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                Log out of Penno Admin?
+              </h2>
+
+              <p className="text-gray-600 mb-8 leading-relaxed">
+                You can log back in anytime using your admin credentials.
+              </p>
+
+              <div className="flex items-center justify-center gap-4">
+                <button
+                  onClick={() => setShowLogoutModal(false)}
+                  className="px-8 py-3 bg-white border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors min-w-[120px]"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={handleLogoutConfirm}
+                  className="px-8 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 active:bg-red-800 transition-colors shadow-md flex items-center gap-2 min-w-[140px] justify-center"
+                >
+                  Logout
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
