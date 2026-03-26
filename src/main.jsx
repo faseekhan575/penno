@@ -11,6 +11,8 @@ import App from './App.jsx'
 import Validate from './validate.tsx'
 import Panel from './panel.jsx'
 import ActiveClubs from './activeclubs.tsx'
+import AllPens from './AllPens.jsx'
+import ReportedPens from './Reportedpens.jsx'
 
 
 createRoot(document.getElementById('root')).render(
@@ -24,6 +26,8 @@ createRoot(document.getElementById('root')).render(
           <Route path="/active-clubs" element={<ActiveClubs />} />
           <Route path="/suspending-clubs" element={<SuspendingClubs />} />
           <Route path="/logout" element={<LogoutHandler />} />
+<Route path="/allpens" element={<AllPens />} />
+<Route path="/report" element={<ReportedPens />} />
         <Route path="*" element={<App />} />
       </Routes>
     </BrowserRouter>

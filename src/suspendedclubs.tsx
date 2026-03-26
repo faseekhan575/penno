@@ -275,11 +275,11 @@ export default function SuspendingClubs() {
                 PENS & MODERATION
               </p>
               <nav className="space-y-1">
-                <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                <a href="/allpens" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
                   <MessageSquare className="w-5 h-5 mr-3" />
                   All Pens
                 </a>
-                <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                <a href="/report" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
                   <AlertTriangle className="w-5 h-5 mr-3 text-red-500" />
                   Reported pens
                 </a>
@@ -582,11 +582,11 @@ export default function SuspendingClubs() {
               PENS & MODERATION
             </p>
             <nav className="space-y-1">
-              <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+              <a href="/allpens" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
                 <MessageSquare className="w-5 h-5 mr-3" />
                 All Pens
               </a>
-              <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+              <a href="/report" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
                 <AlertTriangle className="w-5 h-5 mr-3 text-red-500" />
                 Reported pens
               </a>
