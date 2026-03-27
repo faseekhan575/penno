@@ -267,10 +267,10 @@ function Sidebar({ onLogout }) {
         <div className="mb-8">
           <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">USERS</p>
           <nav className="space-y-1">
-            <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+            <a href="/club-own" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
               <Users className="w-5 h-5 mr-3" /> Club owner
             </a>
-            <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+            <a href="/verify" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
               <UserCog className="w-5 h-5 mr-3" /> Verified poster
             </a>
           </nav>

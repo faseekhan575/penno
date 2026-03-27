@@ -13,6 +13,8 @@ import Panel from './panel.jsx'
 import ActiveClubs from './activeclubs.tsx'
 import AllPens from './AllPens.jsx'
 import ReportedPens from './Reportedpens.jsx'
+import VerifiedPoster from './Verifiedposter.jsx'
+import ClubOwner from './Clubowner.jsx'
 
 
 createRoot(document.getElementById('root')).render(
@@ -28,7 +30,9 @@ createRoot(document.getElementById('root')).render(
           <Route path="/logout" element={<LogoutHandler />} />
 <Route path="/allpens" element={<AllPens />} />
 <Route path="/report" element={<ReportedPens />} />
-        <Route path="*" element={<App />} />
+    <Route path="/verify" element={<VerifiedPoster />} />
+    <Route path="/club-own" element={<ClubOwner />} />
+
       </Routes>
     </BrowserRouter>
   </StrictMode>
