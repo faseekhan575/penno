@@ -9,7 +9,6 @@ import {
   UserCog,
   Settings,
   Shield,
-  Bell,
   Search,
   LogOut,
   ChevronDown,
@@ -20,6 +19,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { pushNotification, NotifBell } from './Notifications';
 
 // ── Initial data ──────────────────────────────────────────────────────────────
 const initialReportedPens = [
@@ -164,7 +164,7 @@ function Toast({ type, title, message, onClose }) {
   return (
     <div className={`fixed top-5 right-5 z-[100] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl text-white ${bg}`}
       style={{ border: isSuccess ? '' : '1px solid #fca5a5', background: isSuccess ? '' : 'white', color: isSuccess ? 'white' : '#374151' }}>
-      <XCircle size={20} className={isSuccess ? 'text-white' : 'text-red-500'} />
+      <Icon size={20} className={isSuccess ? 'text-white' : 'text-red-500'} />
       <div>
         <p className={`font-medium ${!isSuccess ? 'text-gray-900' : ''}`}>{title}</p>
         <p className={`text-sm ${!isSuccess ? 'text-gray-500' : 'opacity-90'}`}>{message}</p>
@@ -172,6 +172,52 @@ function Toast({ type, title, message, onClose }) {
       <button onClick={onClose} className="ml-3 text-gray-400 hover:text-gray-600">
         <X size={18} />
       </button>
+    </div>
+  );
+}
+
+// ── Profile Modal (Exact match to your image) ────────────────────────────────
+function ProfileModal({ onClose, onLogout }) {
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        {/* Blue Banner */}
+        <div className="bg-blue-600 h-28 relative">
+          <div className="absolute -bottom-10 left-6 w-20 h-20 rounded-full border-4 border-white overflow-hidden">
+            <img 
+              src="https://i.pravatar.cc/80?u=jamesoneil" 
+              alt="James O'Neil" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+
+        <div className="pt-14 pb-6 px-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold text-gray-900">James O'Neil</h2>
+              <p className="text-gray-500 mt-0.5">Dianne.russell@mail.com</p>
+            </div>
+            <div className="bg-blue-600 text-white text-xs font-medium px-3 py-1 rounded">Super Admin</div>
+          </div>
+
+          <div className="mt-8 flex gap-3">
+            <button 
+              onClick={onClose}
+              className="flex-1 py-3 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Close
+            </button>
+            <button 
+              onClick={onLogout}
+              className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              Logout
+              <span className="text-lg leading-none">↗</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -231,24 +277,28 @@ function Sidebar({ onLogout, activeItem }) {
         <div className="mb-8">
           <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">USERS</p>
           <nav className="space-y-1">
-            <a href="/club-own" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-              <Users className="w-5 h-5 mr-3" /> Club owner
-            </a>
-            <a href="/verify" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-              <UserCog className="w-5 h-5 mr-3" /> Verified poster
-            </a>
+            <NavLink to="/club-own" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+              <Users className="w-5 h-5 mr-3" />
+              Club owner
+            </NavLink>
+            <NavLink to="/verify" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+              <UserCog className="w-5 h-5 mr-3" />
+              Verified poster
+            </NavLink>
           </nav>
         </div>
 
         <div className="mb-4">
           <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">PLATFORM SETTINGS</p>
           <nav className="space-y-1">
-            <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-              <Settings className="w-5 h-5 mr-3" /> Categories
-            </a>
-            <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-              <Shield className="w-5 h-5 mr-3" /> Safety rules
-            </a>
+            <NavLink to="/cat" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+              <Settings className="w-5 h-5 mr-3" />
+              Categories
+            </NavLink>
+            <NavLink to="/safety" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+              <Shield className="w-5 h-5 mr-3" />
+              Safety rules
+            </NavLink>
           </nav>
         </div>
       </div>
@@ -263,16 +313,16 @@ function Sidebar({ onLogout, activeItem }) {
 }
 
 // ── Header ────────────────────────────────────────────────────────────────────
-function Header({ title }) {
+function Header({ title, onProfileClick }) {
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-3.5 flex items-center justify-between flex-shrink-0">
       <h1 className="text-xl font-semibold text-gray-900">{title}</h1>
       <div className="flex items-center gap-5">
-        <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-          <Bell className="w-6 h-6" />
-          <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white" />
-        </button>
-        <div className="flex items-center gap-3">
+        <NotifBell />
+        <div 
+          onClick={onProfileClick}
+          className="flex items-center gap-3 cursor-pointer hover:bg-gray-100 p-1.5 -m-1.5 rounded-xl transition-colors"
+        >
           <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200">
             <img src="https://i.pravatar.cc/80?u=jamesoneil" alt="James O'Neil" className="w-full h-full object-cover" />
           </div>
@@ -305,6 +355,7 @@ export default function ReportedPens() {
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [showSuspendModal, setShowSuspendModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false); // ← New
 
   // Filter states
   const [sortFilter, setSortFilter] = useState('All');
@@ -370,12 +421,10 @@ export default function ReportedPens() {
     setPens(updated);
     setToast({ type: 'error', title: 'Pen removed', message: 'Followers will no longer see it.' });
     setShowRemoveModal(false);
-    // keep detail view open momentarily then close
   };
 
   const handleSuspendClub = () => {
     if (!selectedPen) return;
-    // Move club to suspended list
     try {
       const saved = localStorage.getItem('penno_suspended');
       const suspended = saved ? JSON.parse(saved) : [];
@@ -422,7 +471,7 @@ export default function ReportedPens() {
         <Sidebar onLogout={() => setShowLogoutModal(true)} activeItem="reported" />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <Header title="Reported Pens" />
+          <Header title="Reported Pens" onProfileClick={() => setShowProfileModal(true)} />
 
           <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
             <div className="flex items-center gap-4 mb-6">
@@ -636,8 +685,70 @@ export default function ReportedPens() {
           </div>
         )}
 
+        {/* Profile Modal */}
+        {showProfileModal && (
+          <ProfileModal 
+            onClose={() => setShowProfileModal(false)} 
+            onLogout={() => { 
+              setShowProfileModal(false); 
+              setShowLogoutModal(true); 
+            }} 
+          />
+        )}
+
         {/* Logout Modal */}
-        {showLogoutModal && <LogoutModal onCancel={() => setShowLogoutModal(false)} onConfirm={handleLogoutConfirm} />}
+        {showLogoutModal && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              <div className="p-8 text-center relative">
+                <div className="relative mx-auto mb-6 w-24 h-24">
+                  <div className="absolute inset-0 rounded-full bg-red-500/10 animate-ping-slow"></div>
+                  <div className="absolute inset-2 rounded-full bg-red-500/20 animate-ping-slower"></div>
+                  <div className="w-full h-full rounded-full bg-red-500 flex items-center justify-center shadow-lg relative z-10">
+                    <span className="text-white text-5xl font-bold">!</span>
+                  </div>
+                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-400 rounded-full animate-float"></span>
+                  <span className="absolute bottom-2 right-4 w-2 h-2 bg-red-300 rounded-full animate-float delay-150"></span>
+                  <span className="absolute top-6 right-0 w-1.5 h-1.5 bg-red-400 rounded-full animate-float delay-300"></span>
+                  <span className="absolute bottom-8 left-2 w-1.5 h-1.5 bg-red-300 rounded-full animate-float delay-450"></span>
+                </div>
+
+                <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                  Log out of Penno Admin?
+                </h2>
+
+                <p className="text-gray-600 mb-8 leading-relaxed">
+                  You can log back in anytime using your admin credentials.
+                </p>
+
+                <div className="flex items-center justify-center gap-4">
+                  <button
+                    onClick={() => setShowLogoutModal(false)}
+                    className="px-8 py-3 bg-white border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors min-w-[120px]"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    onClick={handleLogoutConfirm}
+                    className="px-8 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 active:bg-red-800 transition-colors shadow-md flex items-center gap-2 min-w-[140px] justify-center"
+                  >
+                    Logout
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      strokeWidth="2"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {toast && <Toast type={toast.type} title={toast.title} message={toast.message} onClose={() => setToast(null)} />}
       </div>
@@ -650,7 +761,7 @@ export default function ReportedPens() {
       <Sidebar onLogout={() => setShowLogoutModal(true)} activeItem="reported" />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header title="Reported Pens" />
+        <Header title="Reported Pens" onProfileClick={() => setShowProfileModal(true)} />
 
         <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
           {/* Stats */}
@@ -813,7 +924,58 @@ export default function ReportedPens() {
       )}
 
       {/* Logout Modal */}
-      {showLogoutModal && <LogoutModal onCancel={() => setShowLogoutModal(false)} onConfirm={handleLogoutConfirm} />}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-8 text-center relative">
+              <div className="relative mx-auto mb-6 w-24 h-24">
+                <div className="absolute inset-0 rounded-full bg-red-500/10 animate-ping-slow"></div>
+                <div className="absolute inset-2 rounded-full bg-red-500/20 animate-ping-slower"></div>
+                <div className="w-full h-full rounded-full bg-red-500 flex items-center justify-center shadow-lg relative z-10">
+                  <span className="text-white text-5xl font-bold">!</span>
+                </div>
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-400 rounded-full animate-float"></span>
+                <span className="absolute bottom-2 right-4 w-2 h-2 bg-red-300 rounded-full animate-float delay-150"></span>
+                <span className="absolute top-6 right-0 w-1.5 h-1.5 bg-red-400 rounded-full animate-float delay-300"></span>
+                <span className="absolute bottom-8 left-2 w-1.5 h-1.5 bg-red-300 rounded-full animate-float delay-450"></span>
+              </div>
+
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                Log out of Penno Admin?
+              </h2>
+
+              <p className="text-gray-600 mb-8 leading-relaxed">
+                You can log back in anytime using your admin credentials.
+              </p>
+
+              <div className="flex items-center justify-center gap-4">
+                <button
+                  onClick={() => setShowLogoutModal(false)}
+                  className="px-8 py-3 bg-white border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors min-w-[120px]"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={handleLogoutConfirm}
+                  className="px-8 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 active:bg-red-800 transition-colors shadow-md flex items-center gap-2 min-w-[140px] justify-center"
+                >
+                  Logout
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {toast && <Toast type={toast.type} title={toast.title} message={toast.message} onClose={() => setToast(null)} />}
     </div>
@@ -839,35 +1001,5 @@ function FilterChip({ label, active, onClick }) {
       className={`px-4 py-1.5 text-sm rounded-full border transition-colors ${active ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
       {label}
     </button>
-  );
-}
-
-// ── Logout Modal ──────────────────────────────────────────────────────────────
-function LogoutModal({ onCancel, onConfirm }) {
-  return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
-        <div className="p-8 text-center">
-          <div className="relative mx-auto mb-6 w-24 h-24">
-            <div className="w-full h-full rounded-full bg-red-500 flex items-center justify-center shadow-lg">
-              <span className="text-white text-5xl font-bold">!</span>
-            </div>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">Log out of Penno Admin?</h2>
-          <p className="text-gray-600 mb-8">You can log back in anytime using your admin credentials.</p>
-          <div className="flex items-center justify-center gap-4">
-            <button onClick={onCancel} className="px-8 py-3 bg-white border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors min-w-[120px]">
-              Cancel
-            </button>
-            <button onClick={onConfirm} className="px-8 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors shadow-md flex items-center gap-2 min-w-[140px] justify-center">
-              Logout
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }

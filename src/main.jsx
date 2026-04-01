@@ -15,6 +15,9 @@ import AllPens from './AllPens.jsx'
 import ReportedPens from './Reportedpens.jsx'
 import VerifiedPoster from './Verifiedposter.jsx'
 import ClubOwner from './Clubowner.jsx'
+import Categories from './Categories.jsx'
+import SafetyRules from './Safetyrules.jsx'
+import Notifications from './Notifications.jsx'
 
 
 createRoot(document.getElementById('root')).render(
@@ -32,7 +35,9 @@ createRoot(document.getElementById('root')).render(
 <Route path="/report" element={<ReportedPens />} />
     <Route path="/verify" element={<VerifiedPoster />} />
     <Route path="/club-own" element={<ClubOwner />} />
-
+     <Route path="/cat" element={<Categories />} />
+    <Route path="/safety" element={<SafetyRules />} />
+    <Route path="/notifications" element={<Notifications />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>

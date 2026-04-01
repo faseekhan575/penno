@@ -1,7 +1,4 @@
 // src/pages/Panel.jsx
-// Full merged version with beautiful animated logout confirmation modal
-// Everything else remains exactly the same
-
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
@@ -14,7 +11,6 @@ import {
   UserCog,
   Settings,
   Shield,
-  Bell,
   Search,
   LogOut,
   ChevronDown,
@@ -28,6 +24,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { pushNotification, NotifBell } from './Notifications';
 
 const mockActivityData = [
   { month: 'Jan', value: 120 },
@@ -59,42 +56,68 @@ const pendingApprovals = [
     time: '3h ago',
     status: 'Pending',
   },
-  // you can add more rows here later
 ];
 
 export default function Panel() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false); // ← New for profile
   const navigate = useNavigate();
 
-  const logout=()=>{
-    navigate('/login')
-  }
+  const logout = () => {
+    navigate('/login');
+  };
 
   const handleLogoutConfirm = () => {
-    // ────────────────────────────────────────────────
-    //       REAL LOGOUT LOGIC SHOULD GO HERE
-    // ────────────────────────────────────────────────
-    // Examples (choose one or combine):
-    //
-    // 1. React Router (if using react-router-dom v6+)
-    //    navigate('/login');
-    //
-    // 2. Window redirect
-    //    window.location.href = '/login';
-    //
-    // 3. Clear localStorage / sessionStorage + redirect
-    //    localStorage.removeItem('token');
-    //    localStorage.removeItem('user');
-    //    window.location.href = '/';
-    //
-    // 4. Call logout API then redirect
-    //    await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-    //    window.location.href = '/login';
-    //
-    // For demo right now:
     setShowLogoutModal(false);
     alert('Logged out successfully! (demo)');
+    navigate('/login');
   };
+
+  // ── Profile Modal (Exact match to your image) ────────────────────────────────
+  function ProfileModal({ onClose, onLogout }) {
+    return (
+      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] backdrop-blur-sm">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+          {/* Blue Banner */}
+          <div className="bg-blue-600 h-28 relative">
+            <div className="absolute -bottom-10 left-6 w-20 h-20 rounded-full border-4 border-white overflow-hidden">
+              <img 
+                src="https://i.pravatar.cc/80?u=jamesoneil" 
+                alt="James O'Neil" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+
+          <div className="pt-14 pb-6 px-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold text-gray-900">James O'Neil</h2>
+                <p className="text-gray-500 mt-0.5">Dianne.russell@mail.com</p>
+              </div>
+              <div className="bg-blue-600 text-white text-xs font-medium px-3 py-1 rounded">Super Admin</div>
+            </div>
+
+            <div className="mt-8 flex gap-3">
+              <button 
+                onClick={onClose}
+                className="flex-1 py-3 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+              <button 
+                onClick={onLogout}
+                className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                Logout
+                <span className="text-lg leading-none">↗</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden relative">
@@ -115,17 +138,17 @@ export default function Panel() {
               OVERVIEW
             </p>
             <nav className="space-y-1">
-            <NavLink
-  to="/panel"
-  end
-  className={({ isActive }) =>
-    `flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors
-     ${isActive ? "bg-blue-200 text-blue-700" : "text-gray-700 hover:bg-gray-100"}`
-  }
->
-  <LayoutDashboard className="w-5 h-5 mr-3" />
-  Dashboard
-</NavLink>
+              <NavLink
+                to="/panel"
+                end
+                className={({ isActive }) =>
+                  `flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors
+                   ${isActive ? "bg-blue-200 text-blue-700" : "text-gray-700 hover:bg-gray-100"}`
+                }
+              >
+                <LayoutDashboard className="w-5 h-5 mr-3" />
+                Dashboard
+              </NavLink>
             </nav>
           </div>
 
@@ -134,24 +157,24 @@ export default function Panel() {
               CLUB MANAGEMENT
             </p>
             <nav className="space-y-1">
-             <NavLink
-  to="/pending"
-  className={({ isActive }) =>
-    `flex items-center px-3 py-2 text-sm rounded-lg transition-colors
-     ${isActive ? "bg-blue-700 text-gray-900" : "text-gray-700 hover:bg-gray-100"}`
-  }
->
-  <AlertTriangle className="w-5 h-5 mr-3 text-orange-500" />
-  Pending approval
-</NavLink>
-              <a href="/active-clubs" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+              <NavLink
+                to="/pending"
+                className={({ isActive }) =>
+                  `flex items-center px-3 py-2 text-sm rounded-lg transition-colors
+                   ${isActive ? "bg-blue-700 text-white" : "text-gray-700 hover:bg-gray-100"}`
+                }
+              >
+                <AlertTriangle className="w-5 h-5 mr-3 text-orange-500" />
+                Pending approval
+              </NavLink>
+              <NavLink to="/active-clubs" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
                 <ShieldCheck className="w-5 h-5 mr-3 text-green-500" />
                 Active clubs
-              </a>
-              <a href="/suspending-clubs" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+              </NavLink>
+              <NavLink to="/suspending-clubs" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
                 <Shield className="w-5 h-5 mr-3 text-red-500" />
                 Suspending clubs
-              </a>
+              </NavLink>
             </nav>
           </div>
 
@@ -160,14 +183,14 @@ export default function Panel() {
               PENS & MODERATION
             </p>
             <nav className="space-y-1">
-              <a href="/allpens" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+              <NavLink to="/allpens" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
                 <MessageSquare className="w-5 h-5 mr-3" />
                 All Pens
-              </a>
-              <a href="/report" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+              </NavLink>
+              <NavLink to="/report" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
                 <AlertTriangle className="w-5 h-5 mr-3 text-red-500" />
                 Reported pens
-              </a>
+              </NavLink>
             </nav>
           </div>
 
@@ -176,14 +199,14 @@ export default function Panel() {
               USERS
             </p>
             <nav className="space-y-1">
-              <a href="/club-own" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+              <NavLink to="/club-own" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
                 <Users className="w-5 h-5 mr-3" />
                 Club owner
-              </a>
-              <a href="/verify" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+              </NavLink>
+              <NavLink to="/verify" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
                 <UserCog className="w-5 h-5 mr-3" />
                 Verified poster
-              </a>
+              </NavLink>
             </nav>
           </div>
 
@@ -192,14 +215,14 @@ export default function Panel() {
               PLATFORM SETTINGS
             </p>
             <nav className="space-y-1">
-              <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+              <NavLink to="/cat" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
                 <Settings className="w-5 h-5 mr-3" />
                 Categories
-              </a>
-              <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+              </NavLink>
+              <NavLink to="/safety" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
                 <Shield className="w-5 h-5 mr-3" />
                 Safety rules
-              </a>
+              </NavLink>
             </nav>
           </div>
         </div>
@@ -208,7 +231,6 @@ export default function Panel() {
         <div className="p-4 border-t border-gray-200">
           <button
             onClick={() => setShowLogoutModal(true)}
-           
             className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-sm font-medium transition-colors"
           >
             <LogOut className="w-4 h-4" />
@@ -233,12 +255,12 @@ export default function Panel() {
               />
             </div>
 
-            <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-              <Bell className="w-6 h-6" />
-              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white"></span>
-            </button>
+            <NotifBell />
 
-            <div className="flex items-center gap-3">
+            <div 
+              onClick={() => setShowProfileModal(true)}
+              className="flex items-center gap-3 cursor-pointer hover:bg-gray-100 p-1.5 -m-1.5 rounded-xl transition-colors"
+            >
               <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200">
                 <img
                   src="https://i.pravatar.cc/80?u=jamesoneil"
@@ -463,7 +485,7 @@ export default function Panel() {
                 </button>
 
                 <button
-                   onClick={logout}
+                  onClick={logout}
                   className="px-8 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 active:bg-red-800 transition-colors shadow-md flex items-center gap-2 min-w-[140px] justify-center"
                 >
                   Logout
@@ -481,6 +503,17 @@ export default function Panel() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <ProfileModal 
+          onClose={() => setShowProfileModal(false)} 
+          onLogout={() => { 
+            setShowProfileModal(false); 
+            setShowLogoutModal(true); 
+          }} 
+        />
       )}
     </div>
   );

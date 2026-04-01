@@ -2,11 +2,12 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, ShieldCheck, AlertTriangle, MessageSquare,
-  UserCog, Settings, Shield, Bell, Search, LogOut, ChevronDown,
+  UserCog, Settings, Shield, Search, LogOut, ChevronDown,
   X, CheckCircle2, XCircle, ArrowLeft, Filter, Mail, MapPin,
   Calendar, Phone,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { pushNotification, NotifBell } from './Notifications';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function getInitials(name) {
@@ -105,6 +106,52 @@ function Toast({ type, title, message, onClose }) {
   );
 }
 
+// ── Profile Modal (Exact match to your image) ────────────────────────────────
+function ProfileModal({ onClose, onLogout }) {
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        {/* Blue Banner */}
+        <div className="bg-blue-600 h-28 relative">
+          <div className="absolute -bottom-10 left-6 w-20 h-20 rounded-full border-4 border-white overflow-hidden">
+            <img 
+              src="https://i.pravatar.cc/80?u=jamesoneil" 
+              alt="James O'Neil" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+
+        <div className="pt-14 pb-6 px-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold text-gray-900">James O'Neil</h2>
+              <p className="text-gray-500 mt-0.5">Dianne.russell@mail.com</p>
+            </div>
+            <div className="bg-blue-600 text-white text-xs font-medium px-3 py-1 rounded">Super Admin</div>
+          </div>
+
+          <div className="mt-8 flex gap-3">
+            <button 
+              onClick={onClose}
+              className="flex-1 py-3 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Close
+            </button>
+            <button 
+              onClick={onLogout}
+              className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              Logout
+              <span className="text-lg leading-none">↗</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Sidebar ────────────────────────────────────────────────────────────────────
 function Sidebar({ onLogout }) {
   return (
@@ -163,8 +210,12 @@ function Sidebar({ onLogout }) {
         <div className="mb-4">
           <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">PLATFORM SETTINGS</p>
           <nav className="space-y-1">
-            <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100"><Settings className="w-5 h-5 mr-3"/>Categories</a>
-            <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100"><Shield className="w-5 h-5 mr-3"/>Safety rules</a>
+            <NavLink to="/cat" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100">
+              <Settings className="w-5 h-5 mr-3"/>Categories
+            </NavLink>
+            <NavLink to="/safety" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100">
+              <Shield className="w-5 h-5 mr-3"/>Safety rules
+            </NavLink>
           </nav>
         </div>
       </div>
@@ -178,16 +229,16 @@ function Sidebar({ onLogout }) {
 }
 
 // ── Header ─────────────────────────────────────────────────────────────────────
-function Header({ title }) {
+function Header({ title, onProfileClick }) {
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-3.5 flex items-center justify-between flex-shrink-0">
       <h1 className="text-xl font-semibold text-gray-900">{title}</h1>
       <div className="flex items-center gap-5">
-        <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-full">
-          <Bell className="w-6 h-6"/>
-          <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white"/>
-        </button>
-        <div className="flex items-center gap-3">
+        <NotifBell />
+        <div 
+          onClick={onProfileClick}
+          className="flex items-center gap-3 cursor-pointer hover:bg-gray-100 p-1.5 -m-1.5 rounded-xl transition-colors"
+        >
           <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200">
             <img src="https://i.pravatar.cc/80?u=jamesoneil" alt="James O'Neil" className="w-full h-full object-cover"/>
           </div>
@@ -261,6 +312,9 @@ export default function ClubOwner() {
   const [suspendReason, setSuspendReason] = useState('Fraud / fake account');
   const [suspendNotif, setSuspendNotif] = useState(true);
 
+  // Profile Modal State
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
   // Filter states
   const [statusFilter, setStatusFilter] = useState('All');
   const [verifiedFilter, setVerifiedFilter] = useState('All');
@@ -276,7 +330,6 @@ export default function ClubOwner() {
       const activeRaw = localStorage.getItem('penno_active');
       if (!activeRaw) return;
       const activeClubs = JSON.parse(activeRaw);
-      // Update club counts based on penno_active
       setOwners(prev => prev.map(owner => {
         const owned = activeClubs.filter(c => owner.clubsList.includes(c.name));
         return owned.length > 0 ? { ...owner, clubs: owned.length } : owner;
@@ -305,7 +358,6 @@ export default function ClubOwner() {
   const handleSuspendConfirm = () => {
     if (!suspendTarget) return;
     setOwners(prev => prev.map(o => o.id === suspendTarget.id ? { ...o, status: 'Suspended' } : o));
-    // Also suspend their clubs
     try {
       const saved = localStorage.getItem('penno_active');
       const active = saved ? JSON.parse(saved) : [];
@@ -335,7 +387,6 @@ export default function ClubOwner() {
   // ── DETAIL VIEW ────────────────────────────────────────────────────────────
   if (selectedOwner) {
     const o = selectedOwner;
-    // Try to get this owner's clubs from penno_active
     let liveClubs = [];
     try {
       const saved = localStorage.getItem('penno_active');
@@ -349,7 +400,7 @@ export default function ClubOwner() {
       <div className="flex h-screen bg-gray-50 overflow-hidden">
         <Sidebar onLogout={() => setShowLogoutModal(true)}/>
         <div className="flex-1 flex flex-col overflow-hidden">
-          <Header title="Club Owners"/>
+          <Header title="Club Owners" onProfileClick={() => setShowProfileModal(true)} />
           <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
             <div className="flex items-center gap-4 mb-6">
               <button onClick={() => setSelectedOwner(null)} className="text-gray-600 hover:text-gray-900 p-1 rounded-lg hover:bg-gray-100">
@@ -560,6 +611,12 @@ export default function ClubOwner() {
 
         {showLogoutModal && <LogoutModal onCancel={() => setShowLogoutModal(false)} onConfirm={handleLogoutConfirm}/>}
         {toast && <Toast type={toast.type} title={toast.title} message={toast.message} onClose={() => setToast(null)}/>}
+        {showProfileModal && (
+          <ProfileModal 
+            onClose={() => setShowProfileModal(false)} 
+            onLogout={() => { setShowProfileModal(false); setShowLogoutModal(true); }} 
+          />
+        )}
       </div>
     );
   }
@@ -569,7 +626,7 @@ export default function ClubOwner() {
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar onLogout={() => setShowLogoutModal(true)}/>
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header title="Club Owners"/>
+        <Header title="Club Owners" onProfileClick={() => setShowProfileModal(true)} />
         <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
 
           {/* Stats */}
@@ -725,6 +782,17 @@ export default function ClubOwner() {
 
       {showLogoutModal && <LogoutModal onCancel={() => setShowLogoutModal(false)} onConfirm={handleLogoutConfirm}/>}
       {toast && <Toast type={toast.type} title={toast.title} message={toast.message} onClose={() => setToast(null)}/>}
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <ProfileModal 
+          onClose={() => setShowProfileModal(false)} 
+          onLogout={() => { 
+            setShowProfileModal(false); 
+            setShowLogoutModal(true); 
+          }} 
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,5 @@
 // src/pages/ActiveClubs.jsx
-import { NavLink } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -10,7 +9,6 @@ import {
   UserCog,
   Settings,
   Shield,
-  Bell,
   Search,
   LogOut,
   ChevronDown,
@@ -20,6 +18,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { pushNotification, NotifBell } from './Notifications';
 
 function getInitials(name) {
   return name
@@ -65,6 +64,52 @@ function Toast({ type, title, message, onClose }) {
   );
 }
 
+// Profile Modal (Exact match to your image)
+function ProfileModal({ onClose, onLogout }) {
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        {/* Blue Banner */}
+        <div className="bg-blue-600 h-28 relative">
+          <div className="absolute -bottom-10 left-6 w-20 h-20 rounded-full border-4 border-white overflow-hidden">
+            <img 
+              src="https://i.pravatar.cc/80?u=jamesoneil" 
+              alt="James O'Neil" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+
+        <div className="pt-14 pb-6 px-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold text-gray-900">James O'Neil</h2>
+              <p className="text-gray-500 mt-0.5">Dianne.russell@mail.com</p>
+            </div>
+            <div className="bg-blue-600 text-white text-xs font-medium px-3 py-1 rounded">Super Admin</div>
+          </div>
+
+          <div className="mt-8 flex gap-3">
+            <button 
+              onClick={onClose}
+              className="flex-1 py-3 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Close
+            </button>
+            <button 
+              onClick={onLogout}
+              className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              Logout
+              <span className="text-lg leading-none">↗</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ActiveClubs() {
   const [activeClubs, setActiveClubs] = useState(() => {
     try {
@@ -95,6 +140,9 @@ export default function ActiveClubs() {
 
   // Logout Modal
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  // Profile Modal
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const navigate = useNavigate();
 
@@ -207,6 +255,13 @@ export default function ActiveClubs() {
       /* ignore */
     }
 
+    pushNotification({
+      title: `${club.name} suspended`,
+      sub: `${club.category} • ${club.email}`,
+      path: '/suspending-clubs',
+      type: 'warning',
+    });
+
     setToast({
       type: 'error',
       title: 'Club suspended',
@@ -216,7 +271,7 @@ export default function ActiveClubs() {
     if (selectedClubForReview?.id === selectedId) closeReview();
   };
 
-  // ==================== REVIEW MODE (Same as SuspendingClubs) ====================
+  // ==================== REVIEW MODE ====================
   if (selectedClubForReview) {
     const club = selectedClubForReview;
 
@@ -232,91 +287,62 @@ export default function ActiveClubs() {
           </div>
           <div className="flex-1 overflow-y-auto py-5 px-3">
             <div className="mb-8">
-              <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                OVERVIEW
-              </p>
+              <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">OVERVIEW</p>
               <nav className="space-y-1">
-                <NavLink
-                  to="/panel"
-                  className="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-700 hover:bg-gray-100"
-                >
-                  <LayoutDashboard className="w-5 h-5 mr-3" />
-                  Dashboard
+                <NavLink to="/panel" className="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-700 hover:bg-gray-100">
+                  <LayoutDashboard className="w-5 h-5 mr-3" />Dashboard
                 </NavLink>
               </nav>
             </div>
 
             <div className="mb-8">
-              <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                CLUB MANAGEMENT
-              </p>
+              <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">CLUB MANAGEMENT</p>
               <nav className="space-y-1">
-                <NavLink
-                  to="/pending"
-                  className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <AlertTriangle className="w-5 h-5 mr-3" />
-                  Pending approval
+                <NavLink to="/pending" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                  <AlertTriangle className="w-5 h-5 mr-3" />Pending approval
                 </NavLink>
                 <div className="flex items-center px-3 py-2 text-sm rounded-lg bg-blue-500 text-white font-medium">
-                  <ShieldCheck className="w-5 h-5 mr-3 text-white" />
-                  Active clubs
+                  <ShieldCheck className="w-5 h-5 mr-3 text-white" />Active clubs
                 </div>
-                <NavLink
-                  to="/suspending-clubs"
-                  className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <Shield className="w-5 h-5 mr-3 text-red-500" />
-                  Suspending clubs
+                <NavLink to="/suspending-clubs" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                  <Shield className="w-5 h-5 mr-3 text-red-500" />Suspending clubs
                 </NavLink>
               </nav>
             </div>
 
             <div className="mb-8">
-              <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                PENS & MODERATION
-              </p>
+              <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">PENS & MODERATION</p>
               <nav className="space-y-1">
-                <a href="/allpens" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                  <MessageSquare className="w-5 h-5 mr-3" />
-                  All Pens
-                </a>
-                <a href="/report" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                  <AlertTriangle className="w-5 h-5 mr-3 text-red-500" />
-                  Reported pens
-                </a>
+                <NavLink to="/allpens" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                  <MessageSquare className="w-5 h-5 mr-3" />All Pens
+                </NavLink>
+                <NavLink to="/report" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                  <AlertTriangle className="w-5 h-5 mr-3 text-red-500" />Reports pens
+                </NavLink>
               </nav>
             </div>
 
             <div className="mb-8">
-              <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                USERS
-              </p>
+              <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">USERS</p>
               <nav className="space-y-1">
-                <a href="/club-own" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                  <Users className="w-5 h-5 mr-3" />
-                  Club owner
-                </a>
-                <a href="/verify" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                  <UserCog className="w-5 h-5 mr-3" />
-                  Verified poster
-                </a>
+                <NavLink to="/club-own" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                  <Users className="w-5 h-5 mr-3" />Club owner
+                </NavLink>
+                <NavLink to="/verify" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                  <UserCog className="w-5 h-5 mr-3" />Verified poster
+                </NavLink>
               </nav>
             </div>
 
             <div className="mb-4">
-              <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                PLATFORM SETTINGS
-              </p>
+              <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">PLATFORM SETTINGS</p>
               <nav className="space-y-1">
-                <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                  <Settings className="w-5 h-5 mr-3" />
-                  Categories
-                </a>
-                <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                  <Shield className="w-5 h-5 mr-3" />
-                  Safety rules
-                </a>
+                <NavLink to="/cat" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                  <Settings className="w-5 h-5 mr-3" />Categories
+                </NavLink>
+                <NavLink to="/safety" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                  <Shield className="w-5 h-5 mr-3" />Safety rules
+                </NavLink>
               </nav>
             </div>
           </div>
@@ -326,8 +352,7 @@ export default function ActiveClubs() {
               onClick={() => setShowLogoutModal(true)}
               className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-sm font-medium transition-colors"
             >
-              <LogOut className="w-4 h-4" />
-              Logout
+              <LogOut className="w-4 h-4" />Logout
             </button>
           </div>
         </aside>
@@ -335,10 +360,7 @@ export default function ActiveClubs() {
         {/* REVIEW PAGE CONTENT */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4">
-            <button
-              onClick={closeReview}
-              className="text-gray-600 hover:text-gray-900 transition-colors"
-            >
+            <button onClick={closeReview} className="text-gray-600 hover:text-gray-900 transition-colors">
               <ArrowLeft size={24} />
             </button>
             <h1 className="text-xl font-semibold text-gray-900">Active Club Review</h1>
@@ -348,11 +370,7 @@ export default function ActiveClubs() {
             <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="p-6 border-b border-gray-200 bg-gray-50">
                 <div className="flex items-center gap-4">
-                  <div
-                    className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl font-semibold shadow-sm ${getBgColor(
-                      club.logo
-                    )}`}
-                  >
+                  <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl font-semibold shadow-sm ${getBgColor(club.logo)}`}>
                     {getInitials(club.name)}
                   </div>
                   <div>
@@ -392,9 +410,7 @@ export default function ActiveClubs() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                     <p className="text-xs text-gray-500">Joined on</p>
-                    <p className="text-sm font-medium mt-1">
-                      {club.submittedAt || club.time || '2026-01-15'}
-                    </p>
+                    <p className="text-sm font-medium mt-1">{club.submittedAt || club.time || '2026-01-15'}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Total Pens</p>
@@ -415,16 +431,10 @@ export default function ActiveClubs() {
               </div>
 
               <div className="px-6 py-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
-                <button
-                  onClick={closeReview}
-                  className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 font-medium"
-                >
+                <button onClick={closeReview} className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 font-medium">
                   Close
                 </button>
-                <button
-                  onClick={() => openSuspendModal(club.id)}
-                  className="px-8 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium flex items-center gap-2"
-                >
+                <button onClick={() => openSuspendModal(club.id)} className="px-8 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium flex items-center gap-2">
                   Suspend Club
                 </button>
               </div>
@@ -437,11 +447,7 @@ export default function ActiveClubs() {
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
             <div className="bg-white rounded-xl shadow-2xl w-[400px]">
               <div className="p-5">
-                <select
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  className="w-full border border-gray-300 bg-blue-50 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
+                <select value={reason} onChange={(e) => setReason(e.target.value)} className="w-full border border-gray-300 bg-blue-50 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
                   <option>Fraud / fake club</option>
                   <option>Spam / abuse</option>
                   <option>Inappropriate content</option>
@@ -450,12 +456,7 @@ export default function ActiveClubs() {
 
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700">Optional note</label>
-                  <textarea
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    className="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm h-20 resize-y"
-                    placeholder="Why are we suspending?"
-                  />
+                  <textarea value={note} onChange={(e) => setNote(e.target.value)} className="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm h-20 resize-y" placeholder="Why are we suspending?" />
                 </div>
 
                 <div className="mt-5">
@@ -470,10 +471,7 @@ export default function ActiveClubs() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600">Send owner a suspension notice</span>
-                      <button
-                        onClick={() => setNotification(!notification)}
-                        className={`relative h-6 w-11 flex items-center rounded-full transition-all ${notification ? 'bg-blue-600' : 'bg-gray-300'}`}
-                      >
+                      <button onClick={() => setNotification(!notification)} className={`relative h-6 w-11 flex items-center rounded-full transition-all ${notification ? 'bg-blue-600' : 'bg-gray-300'}`}>
                         <div className={`h-5 w-5 bg-white rounded-full shadow transition-all ${notification ? 'translate-x-6' : 'translate-x-0.5'}`} />
                       </button>
                     </div>
@@ -481,18 +479,8 @@ export default function ActiveClubs() {
                 </div>
 
                 <div className="mt-6 flex gap-3">
-                  <button
-                    onClick={closeModals}
-                    className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSuspendConfirm}
-                    className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
-                  >
-                    Suspend club
-                  </button>
+                  <button onClick={closeModals} className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50">Cancel</button>
+                  <button onClick={handleSuspendConfirm} className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Suspend club</button>
                 </div>
               </div>
             </div>
@@ -514,104 +502,70 @@ export default function ActiveClubs() {
           <span className="text-xl font-semibold text-gray-900">Penno</span>
         </div>
         <div className="flex-1 overflow-y-auto py-5 px-3">
-          {/* Sidebar content same as before */}
           <div className="mb-8">
-            <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              OVERVIEW
-            </p>
+            <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">OVERVIEW</p>
             <nav className="space-y-1">
-              <NavLink
-                to="/panel"
-                className="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-700 hover:bg-gray-100"
-              >
-                <LayoutDashboard className="w-5 h-5 mr-3" />
-                Dashboard
+              <NavLink to="/panel" className="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-700 hover:bg-gray-100">
+                <LayoutDashboard className="w-5 h-5 mr-3" />Dashboard
               </NavLink>
             </nav>
           </div>
 
           <div className="mb-8">
-            <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              CLUB MANAGEMENT
-            </p>
+            <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">CLUB MANAGEMENT</p>
             <nav className="space-y-1">
-              <NavLink
-                to="/pending"
-                className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <AlertTriangle className="w-5 h-5 mr-3" />
-                Pending approval
+              <NavLink to="/pending" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                <AlertTriangle className="w-5 h-5 mr-3" />Pending approval
               </NavLink>
               <div className="flex items-center px-3 py-2 text-sm rounded-lg bg-blue-500 text-white font-medium">
-                <ShieldCheck className="w-5 h-5 mr-3 text-white" />
-                Active clubs
+                <ShieldCheck className="w-5 h-5 mr-3 text-white" />Active clubs
               </div>
-              <NavLink
-                to="/suspending-clubs"
-                className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <Shield className="w-5 h-5 mr-3 text-red-500" />
-                Suspending clubs
+              <NavLink to="/suspending-clubs" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                <Shield className="w-5 h-5 mr-3 text-red-500" />Suspending clubs
               </NavLink>
             </nav>
           </div>
 
           <div className="mb-8">
-            <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              PENS & MODERATION
-            </p>
+            <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">PENS & MODERATION</p>
             <nav className="space-y-1">
-              <a href="/allpens" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                <MessageSquare className="w-5 h-5 mr-3" />
-                All Pens
-              </a>
-              <a href="/report" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                <AlertTriangle className="w-5 h-5 mr-3 text-red-500" />
-                Reported pens
-              </a>
+              <NavLink to="/allpens" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                <MessageSquare className="w-5 h-5 mr-3" />All Pens
+              </NavLink>
+              <NavLink to="/report" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                <AlertTriangle className="w-5 h-5 mr-3 text-red-500" />Reports pens
+              </NavLink>
             </nav>
           </div>
 
           <div className="mb-8">
-            <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              USERS
-            </p>
+            <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">USERS</p>
             <nav className="space-y-1">
-              <a href="/club-own" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                <Users className="w-5 h-5 mr-3" />
-                Club owner
-              </a>
-              <a href="/verify" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                <UserCog className="w-5 h-5 mr-3" />
-                Verified poster
-              </a>
+              <NavLink to="/club-own" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                <Users className="w-5 h-5 mr-3" />Club owner
+              </NavLink>
+              <NavLink to="/verify" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                <UserCog className="w-5 h-5 mr-3" />Verified poster
+              </NavLink>
             </nav>
           </div>
 
           <div className="mb-4">
-            <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              PLATFORM SETTINGS
-            </p>
+            <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">PLATFORM SETTINGS</p>
             <nav className="space-y-1">
-              <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                <Settings className="w-5 h-5 mr-3" />
-                Categories
-              </a>
-              <a href="#" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                <Shield className="w-5 h-5 mr-3" />
-                Safety rules
-              </a>
+              <NavLink to="/cat" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                <Settings className="w-5 h-5 mr-3" />Categories
+              </NavLink>
+              <NavLink to="/safety" className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                <Shield className="w-5 h-5 mr-3" />Safety rules
+              </NavLink>
             </nav>
           </div>
         </div>
 
         <div className="p-4 border-t border-gray-200">
-          <button
-            onClick={() => setShowLogoutModal(true)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-sm font-medium transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
+          <button onClick={() => setShowLogoutModal(true)} className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-sm font-medium transition-colors">
+            <LogOut className="w-4 h-4" />Logout
           </button>
         </div>
       </aside>
@@ -621,17 +575,13 @@ export default function ActiveClubs() {
         <header className="bg-white border-b border-gray-200 px-6 py-3.5 flex items-center justify-between">
           <h1 className="text-xl font-semibold text-gray-900">Active Clubs</h1>
           <div className="flex items-center gap-5">
-            <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-              <Bell className="w-6 h-6" />
-              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white" />
-            </button>
-            <div className="flex items-center gap-3">
+            <NotifBell />
+            <div 
+              onClick={() => setShowProfileModal(true)}
+              className="flex items-center gap-3 cursor-pointer hover:bg-gray-100 p-1.5 -m-1.5 rounded-xl transition-colors"
+            >
               <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200">
-                <img
-                  src="https://i.pravatar.cc/80?u=jamesoneil"
-                  alt="James O'Neil"
-                  className="w-full h-full object-cover"
-                />
+                <img src="https://i.pravatar.cc/80?u=jamesoneil" alt="James O'Neil" className="w-full h-full object-cover" />
               </div>
               <div className="hidden sm:block">
                 <p className="font-medium text-sm text-gray-900">James O'Neil</p>
@@ -684,9 +634,7 @@ export default function ActiveClubs() {
             <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-900">Active Clubs</h2>
-                <p className="text-sm text-gray-600">
-                  Clubs currently live and visible on Penno.
-                </p>
+                <p className="text-sm text-gray-600">Clubs currently live and visible on Penno.</p>
               </div>
             </div>
 
@@ -701,18 +649,12 @@ export default function ActiveClubs() {
                   className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 {search && (
-                  <button
-                    onClick={() => setSearch('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
+                  <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                     <X size={18} />
                   </button>
                 )}
               </div>
-              <button
-                onClick={() => setShowFilterModal(true)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
-              >
+              <button onClick={() => setShowFilterModal(true)} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
                 Filter
               </button>
             </div>
@@ -735,11 +677,7 @@ export default function ActiveClubs() {
                     <tr key={club.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center text-base font-semibold shadow-sm ${getBgColor(
-                              club.logo
-                            )}`}
-                          >
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-base font-semibold shadow-sm ${getBgColor(club.logo)}`}>
                             {getInitials(club.name)}
                           </div>
                           <span className="font-medium text-gray-900">{club.name}</span>
@@ -750,23 +688,11 @@ export default function ActiveClubs() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{club.submittedAt || club.time}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{club.reports || 0}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          Active
-                        </span>
+                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right space-x-2">
-                        <button
-                          onClick={() => openReview(club)}
-                          className="px-3.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors"
-                        >
-                          View
-                        </button>
-                        <button
-                          onClick={() => openSuspendModal(club.id)}
-                          className="px-3.5 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded transition-colors"
-                        >
-                          Suspend
-                        </button>
+                        <button onClick={() => openReview(club)} className="px-3.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors">View</button>
+                        <button onClick={() => openSuspendModal(club.id)} className="px-3.5 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded transition-colors">Suspend</button>
                       </td>
                     </tr>
                   ))}
@@ -787,10 +713,7 @@ export default function ActiveClubs() {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mt-16 mr-8 overflow-hidden pointer-events-auto">
             <div className="px-6 py-4 border-b flex items-center justify-between bg-gray-50">
               <h3 className="text-lg font-semibold text-gray-900">Request Filter</h3>
-              <button
-                onClick={() => setShowFilterModal(false)}
-                className="text-gray-600 hover:text-gray-800"
-              >
+              <button onClick={() => setShowFilterModal(false)} className="text-gray-600 hover:text-gray-800">
                 <X size={24} />
               </button>
             </div>
@@ -802,9 +725,7 @@ export default function ActiveClubs() {
                     <button
                       key={opt}
                       className={`px-4 py-1.5 text-sm rounded-full border transition-colors ${
-                        sorting === opt
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                        sorting === opt ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                       }`}
                       onClick={() => setSorting(opt)}
                     >
@@ -820,9 +741,7 @@ export default function ActiveClubs() {
                     <button
                       key={opt}
                       className={`px-4 py-1.5 text-sm rounded-full border transition-colors ${
-                        timeFilter === opt
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                        timeFilter === opt ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                       }`}
                       onClick={() => setTimeFilter(opt)}
                     >
@@ -838,9 +757,7 @@ export default function ActiveClubs() {
                     <button
                       key={cat}
                       className={`px-4 py-1.5 text-sm rounded-full border transition-colors ${
-                        categoryFilter === cat
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                        categoryFilter === cat ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                       }`}
                       onClick={() => setCategoryFilter(cat)}
                     >
@@ -851,28 +768,9 @@ export default function ActiveClubs() {
               </div>
             </div>
             <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3">
-              <button
-                onClick={() => setShowFilterModal(false)}
-                className="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setSorting('All');
-                  setTimeFilter('All');
-                  setCategoryFilter('All');
-                }}
-                className="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
-              >
-                Reset Filter
-              </button>
-              <button
-                onClick={() => setShowFilterModal(false)}
-                className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm"
-              >
-                Apply Filter
-              </button>
+              <button onClick={() => setShowFilterModal(false)} className="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Cancel</button>
+              <button onClick={() => { setSorting('All'); setTimeFilter('All'); setCategoryFilter('All'); }} className="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Reset Filter</button>
+              <button onClick={() => setShowFilterModal(false)} className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm">Apply Filter</button>
             </div>
           </div>
         </div>
@@ -883,11 +781,7 @@ export default function ActiveClubs() {
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-xl shadow-2xl w-[400px]">
             <div className="p-5">
-              <select
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full border border-gray-300 bg-blue-50 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
+              <select value={reason} onChange={(e) => setReason(e.target.value)} className="w-full border border-gray-300 bg-blue-50 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
                 <option>Fraud / fake club</option>
                 <option>Spam / abuse</option>
                 <option>Inappropriate content</option>
@@ -896,12 +790,7 @@ export default function ActiveClubs() {
 
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700">Optional note</label>
-                <textarea
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  className="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm h-20 resize-y"
-                  placeholder="Why are we suspending?"
-                />
+                <textarea value={note} onChange={(e) => setNote(e.target.value)} className="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm h-20 resize-y" placeholder="Why are we suspending?" />
               </div>
 
               <div className="mt-5">
@@ -910,18 +799,13 @@ export default function ActiveClubs() {
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-zinc-200 rounded-full flex items-center justify-center">👤</div>
                     <div>
-                      <p className="text-sm font-medium">
-                        {activeClubs.find((c) => c.id === selectedId)?.name || 'Club'}
-                      </p>
+                      <p className="text-sm font-medium">{activeClubs.find((c) => c.id === selectedId)?.name || 'Club'}</p>
                       <p className="text-xs text-gray-500">Club owner</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600">Send owner a suspension notice</span>
-                    <button
-                      onClick={() => setNotification(!notification)}
-                      className={`relative h-6 w-11 flex items-center rounded-full transition-all ${notification ? 'bg-blue-600' : 'bg-gray-300'}`}
-                    >
+                    <button onClick={() => setNotification(!notification)} className={`relative h-6 w-11 flex items-center rounded-full transition-all ${notification ? 'bg-blue-600' : 'bg-gray-300'}`}>
                       <div className={`h-5 w-5 bg-white rounded-full shadow transition-all ${notification ? 'translate-x-6' : 'translate-x-0.5'}`} />
                     </button>
                   </div>
@@ -929,18 +813,8 @@ export default function ActiveClubs() {
               </div>
 
               <div className="mt-6 flex gap-3">
-                <button
-                  onClick={closeModals}
-                  className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSuspendConfirm}
-                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
-                >
-                  Suspend club
-                </button>
+                <button onClick={closeModals} className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50">Cancel</button>
+                <button onClick={handleSuspendConfirm} className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Suspend club</button>
               </div>
             </div>
           </div>
@@ -948,6 +822,17 @@ export default function ActiveClubs() {
       )}
 
       {toast && <Toast type={toast.type} title={toast.title} message={toast.message} onClose={() => setToast(null)} />}
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <ProfileModal 
+          onClose={() => setShowProfileModal(false)} 
+          onLogout={() => {
+            setShowProfileModal(false);
+            setShowLogoutModal(true);
+          }} 
+        />
+      )}
 
       {/* Logout Modal */}
       {showLogoutModal && (
@@ -966,34 +851,14 @@ export default function ActiveClubs() {
                 <span className="absolute bottom-8 left-2 w-1.5 h-1.5 bg-red-300 rounded-full animate-float delay-450"></span>
               </div>
 
-              <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                Log out of Penno Admin?
-              </h2>
-
-              <p className="text-gray-600 mb-8 leading-relaxed">
-                You can log back in anytime using your admin credentials.
-              </p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">Log out of Penno Admin?</h2>
+              <p className="text-gray-600 mb-8 leading-relaxed">You can log back in anytime using your admin credentials.</p>
 
               <div className="flex items-center justify-center gap-4">
-                <button
-                  onClick={() => setShowLogoutModal(false)}
-                  className="px-8 py-3 bg-white border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors min-w-[120px]"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  onClick={handleLogoutConfirm}
-                  className="px-8 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 active:bg-red-800 transition-colors shadow-md flex items-center gap-2 min-w-[140px] justify-center"
-                >
+                <button onClick={() => setShowLogoutModal(false)} className="px-8 py-3 bg-white border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors min-w-[120px]">Cancel</button>
+                <button onClick={handleLogoutConfirm} className="px-8 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 active:bg-red-800 transition-colors shadow-md flex items-center gap-2 min-w-[140px] justify-center">
                   Logout
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    strokeWidth="2"
-                  >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
                 </button>
